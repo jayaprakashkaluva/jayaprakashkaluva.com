@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Server Transaction Locking and Row Versioning Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem 1.2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .back-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.4rem;
+        }
+        .overview-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        .overview-box ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        .overview-box li {
+            margin-bottom: 0.5rem;
+        }
+        .overview-box strong {
+            color: white;
+            font-weight: 600;
+        }
+        .section-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .section-card h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        ul {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        li {
+            margin-bottom: 0.6rem;
+        }
+        strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        em {
+            font-style: italic;
+            color: #7f8c8d;
+        }
+        code {
+            background-color: #f1f2f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e74c3c;
+        }
+        .highlight-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 6px 6px 0;
+        }
+        .reference {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+        }
+        .reference a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .reference a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            header p {
+                font-size: 1rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            h3 {
+                font-size: 1.2rem;
+            }
+            table {
+                font-size: 0.9rem;
+            }
+            th, td {
+                padding: 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔒 SQL Server Transaction Locking and Row Versioning Guide</h1>
+        <p>Comprehensive summary of transaction integrity, concurrency, and performance optimization</p>
+    </header>
+    
+    <div class="container">
+        <a href="../../index.html" class="back-link">← Home</a>
+        
+        <div class="overview-box">
+            <h2 style="margin-top: 0; border: none; color: white;">Overview</h2>
+            <ul>
+                <li>SQL Server ensures transaction integrity using <strong>locking</strong> and <strong>row versioning</strong> mechanisms.</li>
+                <li>Applications must balance transaction isolation, concurrency, and performance.</li>
+                <li><strong>Optimized locking</strong> (introduced in 2023) reduces lock overhead by altering lock duration and behavior.</li>
+            </ul>
+        </div>
+
+        <h2>Transaction Fundamentals</h2>
+        <div class="section-card">
+            <p>A <strong>transaction</strong> is a logical unit of work with ACID properties: <em>Atomicity, Consistency, Isolation, Durability</em>.</p>
+            <ul>
+                <li>Controlled via <code>BEGIN TRANSACTION</code>, <code>COMMIT</code>, <code>ROLLBACK</code>, or implicitly (autocommit mode).</li>
+                <li>Errors during a transaction trigger rollback and resource release.</li>
+                <li>Distributed transactions use <strong>two-phase commit</strong> with Microsoft Distributed Transaction Coordinator (MS DTC).</li>
+            </ul>
+        </div>
+
+        <h2>Locking vs Row Versioning</h2>
+        
+        <h3>Locking</h3>
+        <div class="section-card">
+            <ul>
+                <li>Locks are requested on resources (rows, pages, tables) to prevent conflicts.</li>
+                <li>Lock granularity affects performance: finer granularity = better concurrency but more overhead.</li>
+                <li><strong>Lock compatibility rules</strong> define which locks can coexist.</li>
+                <li><strong>Lock escalation</strong>: SQL Server may upgrade many small locks into a larger one (e.g., table-level).</li>
+                <li><strong>Key-range locks</strong> prevent phantom rows under <code>SERIALIZABLE</code> isolation.</li>
+            </ul>
+        </div>
+
+        <h3>Row Versioning</h3>
+        <div class="section-card">
+            <ul>
+                <li>Readers access a <em>snapshot</em> of committed data, avoiding blocking.</li>
+                <li>Two row versioning models:
+                    <ol>
+                        <li><strong>Read Committed Snapshot (RCSI)</strong> — statement-level consistency using version store.</li>
+                        <li><strong>Snapshot Isolation</strong> — transaction-level consistency, requires <code>ALLOW_SNAPSHOT_ISOLATION = ON</code>.</li>
+                    </ol>
+                </li>
+                <li>Reduces blocking but adds <strong>tempdb</strong> overhead for version storage.</li>
+                <li>Schema (DDL) operations are not versioned.</li>
+            </ul>
+        </div>
+
+        <h2>Isolation Levels</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Isolation Level</th>
+                    <th>Dirty Read</th>
+                    <th>Nonrepeatable Read</th>
+                    <th>Phantom Read</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>READ UNCOMMITTED</strong></td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>READ COMMITTED</strong></td>
+                    <td>No</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>REPEATABLE READ</strong></td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td><strong>SNAPSHOT</strong></td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                </tr>
+                <tr>
+                    <td><strong>SERIALIZABLE</strong></td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>No</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <ul style="margin: 0;">
+                <li>Default isolation is <code>READ COMMITTED</code>.</li>
+                <li>With RCSI enabled, reads use versioning instead of locks.</li>
+                <li><code>SERIALIZABLE</code> prevents phantoms via range locking.</li>
+                <li><code>SNAPSHOT</code> provides consistent reads without blocking.</li>
+            </ul>
+        </div>
+
+        <h2>Locking Details and Modes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Lock Mode</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Shared (S)</strong></td>
+                    <td>Read operations</td>
+                </tr>
+                <tr>
+                    <td><strong>Exclusive (X)</strong></td>
+                    <td>Insert/Update/Delete</td>
+                </tr>
+                <tr>
+                    <td><strong>Update (U)</strong></td>
+                    <td>Pre-upgrade to exclusive, reduces deadlocks</td>
+                </tr>
+                <tr>
+                    <td><strong>Intent (IS, IX, SIX)</strong></td>
+                    <td>Signals lower-level locks</td>
+                </tr>
+                <tr>
+                    <td><strong>Schema (Sch-S, Sch-M)</strong></td>
+                    <td>DDL operations</td>
+                </tr>
+                <tr>
+                    <td><strong>Bulk Update (BU)</strong></td>
+                    <td>Bulk inserts with TABLOCK</td>
+                </tr>
+                <tr>
+                    <td><strong>Key-Range</strong></td>
+                    <td>Protects ranges in SERIALIZABLE isolation</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p style="margin: 0;"><strong>Note:</strong> Locks may <strong>convert</strong> (e.g., <code>U</code> → <code>X</code>) dynamically. Conversion conflicts can lead to waits or <strong>deadlocks</strong>.</p>
+        </div>
+
+        <h2>DML Operations Behavior</h2>
+        
+        <h3>Without Optimized Locking</h3>
+        <div class="section-card">
+            <p>Row/page locks held until transaction end.</p>
+        </div>
+
+        <h3>With Optimized Locking</h3>
+        <div class="section-card">
+            <ul>
+                <li>Uses <strong>TID (Transaction ID) locks</strong> held until transaction end.</li>
+                <li>Row/page locks are acquired and released incrementally.</li>
+                <li>Reduces overall lock memory footprint.</li>
+            </ul>
+        </div>
+
+        <h3>Operation Examples</h3>
+        <ul>
+            <li><strong>Insert:</strong> Range and exclusive locks on new row.</li>
+            <li><strong>Delete:</strong> Exclusive lock on deleted row + TID locks.</li>
+        </ul>
+
+        <h2>Lock Escalation</h2>
+        <div class="section-card">
+            <p>Converts many fine-grained locks into coarse (table-level) locks to reduce overhead.</p>
+            <p>With optimized locking, fewer locks are used — escalation is less frequent.</p>
+        </div>
+
+        <h2>Application Design Guidance</h2>
+        <div class="info-box">
+            <ul style="margin: 0;">
+                <li>Match isolation level to business requirements.</li>
+                <li>Use <strong>RCSI</strong> or <strong>Snapshot Isolation</strong> for high read concurrency workloads.</li>
+                <li>Use lock hints (e.g., <code>UPDLOCK</code>, <code>HOLDLOCK</code>) carefully.</li>
+                <li>Monitor <strong>tempdb</strong> for version store growth under versioning.</li>
+                <li>Track deadlocks and escalation patterns using DMVs and Extended Events.</li>
+                <li>Test and tune <strong>Optimized Locking</strong> in newer SQL Server versions.</li>
+            </ul>
+        </div>
+
+        <div class="reference">
+            <p><em>Reference: <a href="https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-ver17" target="_blank">Microsoft Docs - Transaction Locking and Row Versioning Guide</a></em></p>
+        </div>
+    </div>
+</body>
+</html>
