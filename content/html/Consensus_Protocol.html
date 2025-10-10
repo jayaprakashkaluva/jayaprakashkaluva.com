@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consensus Protocol in Distributed Systems</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        ul {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        li {
+            margin-bottom: 0.6rem;
+        }
+        strong, b {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        code {
+            background-color: #f1f2f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e74c3c;
+        }
+        .section-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .recap {
+            background-color: #e6f3ff;
+            padding: 1.5rem;
+            border-left: 4px solid #667eea;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 1rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            header p {
+                font-size: 1rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔄 Consensus Protocol in Distributed Systems</h1>
+        <p>Understanding how distributed nodes reach agreement</p>
+    </header>
+    
+    <div class="container">
+        <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+
+<div class="section">
+
+  <h2>1. What is a Distributed System?</h2>
+  <p>
+    A <strong>distributed system</strong> is a collection of independent computers (nodes) that work together as a single system. 
+    Examples include databases like <strong>Google Spanner</strong> or blockchain networks like <strong>Bitcoin</strong> and <strong>Ethereum</strong>.
+  </p>
+  <p>
+    Since these nodes communicate over potentially unreliable networks, keeping them synchronized is challenging.
+  </p>
+</div>
+
+<div class="section">
+  <h2>2. What is Consensus?</h2>
+  <p>
+    <strong>Consensus</strong> means <em>agreement</em>. In distributed systems, it refers to getting all nodes to agree on a single value or state, even if some nodes fail or send incorrect information.
+  </p>
+  <p><strong>Goal:</strong> All non-faulty nodes should eventually agree on the same result.</p>
+  <p><em>Example:</em> Multiple database servers must agree on the order of transactions or the identity of the leader node.</p>
+</div>
+
+<div class="section">
+  <h2>3. What is a Consensus Protocol?</h2>
+  <p>
+    A <strong>consensus protocol</strong> is an algorithm that ensures nodes agree on a common value (such as a transaction order, leader, or block) even in the presence of failures.
+  </p>
+
+  <table>
+    <tr>
+      <th>Protocol</th>
+      <th>Main Use</th>
+      <th>Key Feature</th>
+    </tr>
+    <tr>
+      <td>Paxos</td>
+      <td>Databases, distributed coordination</td>
+      <td>High fault tolerance</td>
+    </tr>
+    <tr>
+      <td>Raft</td>
+      <td>Cluster management (e.g., etcd, Kubernetes)</td>
+      <td>Simpler to understand and implement than Paxos</td>
+    </tr>
+    <tr>
+      <td>PBFT (Practical Byzantine Fault Tolerance)</td>
+      <td>Blockchain systems</td>
+      <td>Tolerates malicious (Byzantine) nodes</td>
+    </tr>
+    <tr>
+      <td>Proof of Work / Proof of Stake</td>
+      <td>Blockchains</td>
+      <td>Achieve consensus over open, untrusted networks</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>4. Why is Consensus Needed?</h2>
+  <p>Let’s make it intuitive with an example:</p>
+  <ul>
+    <li>Server A receives a request to add $10 to an account.</li>
+    <li>Server B receives a request to subtract $10.</li>
+  </ul>
+  <p>
+    If they update separately, their balances may diverge. Consensus ensures all servers agree on the same operation order, maintaining <strong>consistency</strong>.
+  </p>
+
+  <p><strong>Consensus ensures:</strong></p>
+  <ul>
+    <li>All servers agree which operation happens first.</li>
+    <li>System remains consistent and reliable even with failures.</li>
+  </ul>
+
+  <p>Consensus provides:</p>
+  <ul>
+    <li><strong>Consistency</strong> — All nodes agree on data.</li>
+    <li><strong>Fault tolerance</strong> — System works even if some nodes fail.</li>
+    <li><strong>Coordination</strong> — Nodes agree on who is leader and what happens next.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>5. Real-world Example — Raft in Kubernetes / etcd</h2>
+  <p>
+    <strong>System:</strong> Kubernetes uses <strong>etcd</strong> (a distributed key-value store) for storing cluster state.<br>
+    <strong>Consensus Protocol:</strong> Raft
+  </p>
+
+  <p><strong>How it works:</strong></p>
+  <ol>
+    <li>etcd runs on multiple nodes (e.g., 3 or 5).</li>
+    <li>One node is elected as the <strong>leader</strong>.</li>
+    <li>Configuration changes go to the leader.</li>
+    <li>The leader replicates changes to followers.</li>
+    <li>Once a majority acknowledges, the change is committed.</li>
+    <li>If a node fails, the system remains consistent and operational.</li>
+  </ol>
+
+  <img src="A_2D_digital_diagram_illustrates_the_Raft_consensu.png" alt="Raft Consensus Protocol Diagram">
+
+  <div class="recap">
+    <h3>Quick Recap</h3>
+    <table>
+      <tr>
+        <th>Concept</th>
+        <th>Meaning</th>
+      </tr>
+      <tr>
+        <td>Consensus</td>
+        <td>Agreement among distributed nodes on a single value or state</td>
+      </tr>
+      <tr>
+        <td>Why Needed</td>
+        <td>Ensures data consistency and fault tolerance</td>
+      </tr>
+      <tr>
+        <td>Common Protocols</td>
+        <td>Paxos, Raft, PBFT, PoW/PoS</td>
+      </tr>
+      <tr>
+        <td>Example System</td>
+        <td>etcd (used by Kubernetes) uses Raft for consistent cluster state</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>6. Raft Leader Failure Handling</h2>
+  <p>
+    Let’s see what happens when the leader fails in Raft — this is key to its reliability.
+  </p>
+
+  <h3>Step 1: Leader Fails</h3>
+  <p>
+    Imagine 5 nodes: <strong>A, B, C, D, E</strong>.  
+    <strong>B</strong> is the leader. If B crashes or loses network connectivity, followers stop receiving heartbeats from B.
+  </p>
+
+  <h3>Step 2: Detecting the Failure</h3>
+  <p>
+    Each follower expects regular <strong>heartbeats</strong> from the leader. If they stop hearing from it for a timeout period (e.g., 150–300 ms), one follower (say C) assumes the leader is dead and becomes a <strong>candidate</strong>.
+  </p>
+
+  <ol>
+    <li>Increments its term number (a logical clock).</li>
+    <li>Requests votes from other nodes.</li>
+    <li>If it receives a majority of votes, it becomes the new leader.</li>
+  </ol>
+
+  <h3>Step 3: Resuming Operations</h3>
+  <p>
+    Once C is elected leader:
+  </p>
+  <ul>
+    <li>It sends heartbeats to all followers to announce leadership.</li>
+    <li>Checks old logs from B.</li>
+    <li>Keeps only those entries that were confirmed by a majority.</li>
+    <li>Discards uncommitted entries to prevent inconsistency.</li>
+  </ul>
+
+  <h3>Step 4: Fault Tolerance</h3>
+  <p>
+    Even if 1 or 2 nodes fail, the cluster continues to operate normally.  
+    Raft only needs a <strong>majority</strong> to function — in a 5-node cluster, 3 working nodes are enough.
+  </p>
+
+  <img src="A_2D_digital_diagram_depicts_leader_failure_and_re.png" alt="Raft Leader Failure and Recovery Diagram">
+
+  <div class="recap">
+    <h3>Leader Failure Handling Summary</h3>
+    <table>
+      <tr>
+        <th>Stage</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>Failure Detection</td>
+        <td>Followers stop receiving heartbeats from the leader</td>
+      </tr>
+      <tr>
+        <td>Leader Election</td>
+        <td>A follower becomes a candidate and requests votes</td>
+      </tr>
+      <tr>
+        <td>New Leader Elected</td>
+        <td>Majority votes decide the new leader</td>
+      </tr>
+      <tr>
+        <td>Log Synchronization</td>
+        <td>Uncommitted logs are removed; committed entries retained</td>
+      </tr>
+      <tr>
+        <td>System Recovery</td>
+        <td>Cluster resumes normal operation</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+    </div>
+</body>
+</html>
