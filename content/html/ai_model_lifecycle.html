@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Model Lifecycle Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+        .goal {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 0.5rem;
+        }
+        .example {
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .example-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        code {
+            background-color: #f1f2f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .flow-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        .flow-text {
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.5rem 1rem;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .back-link:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .flow-text {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 AI Model Lifecycle Guide</h1>
+        <p>Complete guide to building, training, and deploying AI models</p>
+    </header>
+    
+    <div class="container">
+        <a href="index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+        <div class="step">
+            <div class="step-number">1. 🎯 Problem Definition</div>
+            <div class="goal">Goal: Understand what you're solving.</div>
+            <p>Example: Predict if an email is spam or not (binary classification).</p>
+            <p>Define input (email text) and output (spam / not spam).</p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2. 📦 Data Collection</div>
+            <div class="goal">Goal: Gather data relevant to the problem.</div>
+            <div class="example">
+                <div class="example-title">Example:</div>
+                <p>Emails + their labels (spam or ham)</p>
+                <p>Could come from databases, CSVs, web scraping, etc.</p>
+            </div>
+            <pre><code>import pandas as pd
+data = pd.read_csv("emails.csv")</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3. 🧼 Data Preprocessing</div>
+            <div class="goal">Goal: Clean and prepare the data.</div>
+            <p>Steps may include:</p>
+            <ul>
+                <li>Tokenization (for text)</li>
+                <li>Normalization (for numerical data)</li>
+                <li>One-hot encoding (for categories)</li>
+                <li>Splitting into train/test</li>
+            </ul>
+            <pre><code>from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(data["text"], data["label"])</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4. 🧠 Model Building</div>
+            <div class="goal">Goal: Define the structure (architecture) of the model.</div>
+            <div class="example">
+                <div class="example-title">Example: Simple neural network using PyTorch</div>
+            </div>
+            <pre><code>import torch.nn as nn
+
+class SpamClassifier(nn.Module):
+    def __init__(self, input_size):
+        super().__init__()
+        self.fc = nn.Linear(input_size, 1)
+
+    def forward(self, x):
+        return torch.sigmoid(self.fc(x))</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5. ⚙️ Model Training</div>
+            <div class="goal">Goal: Train the model using training data.</div>
+            <pre><code># Define model, loss, optimizer
+model = SpamClassifier(input_size=100)
+criterion = nn.BCELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# Training loop
+for epoch in range(10):
+    optimizer.zero_grad()
+    outputs = model(X_train_tensor)
+    loss = criterion(outputs, y_train_tensor)
+    loss.backward()
+    optimizer.step()</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">6. 🧪 Evaluation</div>
+            <div class="goal">Goal: Test model on unseen data and evaluate performance.</div>
+            <pre><code>from sklearn.metrics import accuracy_score
+
+preds = model(X_test_tensor).round()
+acc = accuracy_score(y_test_tensor, preds)
+print("Accuracy:", acc)</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">7. 💾 Model Saving</div>
+            <div class="goal">Goal: Save trained model to disk.</div>
+            <pre><code>torch.save(model.state_dict(), "spam_model.pt")</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">8. 🚀 Deployment</div>
+            <div class="goal">Goal: Serve the model in production (API, mobile, etc.)</div>
+            <div class="example">
+                <div class="example-title">Example using FastAPI:</div>
+            </div>
+            <pre><code>from fastapi import FastAPI
+import torch
+
+app = FastAPI()
+model = SpamClassifier(input_size=100)
+model.load_state_dict(torch.load("spam_model.pt"))
+model.eval()
+
+@app.post("/predict")
+def predict(email_text: str):
+    vector = preprocess(email_text)  # vectorize input
+    with torch.no_grad():
+        output = model(vector)
+    return {"spam": bool(output.item() > 0.5)}</code></pre>
+        </div>
+
+        <div class="step">
+            <div class="step-number">9. 📊 Monitoring</div>
+            <div class="goal">Goal: Track how the model performs in real-world use.</div>
+            <p>You might:</p>
+            <ul>
+                <li>Monitor prediction accuracy over time.</li>
+                <li>Detect concept drift (data distribution changes).</li>
+                <li>Retrain model with new data if needed.</li>
+            </ul>
+            <div class="example">
+                <div class="example-title">Example tools:</div>
+                <ul>
+                    <li>Prometheus + Grafana</li>
+                    <li>MLflow</li>
+                    <li>AWS SageMaker Model Monitor</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-number">10. 🔁 Retraining / Feedback Loop</div>
+            <div class="goal">Goal: Continuously improve the model</div>
+            <p>As the model gets more data or starts performing poorly:</p>
+            <ul>
+                <li>Collect new labeled examples.</li>
+                <li>Fine-tune or retrain the model.</li>
+                <li>Repeat training and deployment.</li>
+            </ul>
+        </div>
+
+        <div class="flow-section">
+            <h3>🔄 Complete Flow</h3>
+            <div class="flow-text">
+                Problem → Data → Preprocessing → Model Design → Training → Evaluation → Saving → Deployment → Monitoring → Retrain
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
