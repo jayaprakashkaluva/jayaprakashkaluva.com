@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How HTTP Works Across TCP/IP Layers</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        header p {
+            margin: 0.5rem 0 0 0;
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+        }
+        ul {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        li {
+            margin-bottom: 0.6rem;
+        }
+        strong, b {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        code {
+            background-color: #f1f2f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e74c3c;
+        }
+        .section-card {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 1rem 0;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            header p {
+                font-size: 1rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌐 How HTTP Works Across TCP/IP Layers</h1>
+        <p>Understanding network communication from application to physical layer</p>
+    </header>
+    
+    <div class="container">
+        <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+
+<div class="section">
+  <h2>1. Application Layer (HTTP)</h2>
+  <ul>
+    <li>The application (e.g., a web app) creates an HTTP request such as <code>GET /data HTTP/1.1</code>.</li>
+    <li>Headers like <code>Host</code> and <code>User-Agent</code> are added.</li>
+    <li>The request is passed to the Transport Layer for delivery.</li>
+    <li>The application does not handle IPs or connections directly; it relies on TCP.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>2. Transport Layer (TCP)</h2>
+  <ul>
+    <li>TCP segments the HTTP request into smaller pieces called <b>segments</b>.</li>
+    <li>It assigns a <b>source port</b> (random) and a <b>destination port</b> (80 for HTTP, 443 for HTTPS).</li>
+    <li>A <b>3-way handshake</b> establishes the connection:
+      <ol>
+        <li><b>SYN:</b> Client → Server (connection request)</li>
+        <li><b>SYN-ACK:</b> Server → Client (acknowledge + request)</li>
+        <li><b>ACK:</b> Client → Server (connection established)</li>
+      </ol>
+    </li>
+    <li>TCP ensures data reliability, ordering, and error recovery.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>3. Internet Layer (IP)</h2>
+  <ul>
+    <li>TCP segments are encapsulated into <b>IP packets</b>.</li>
+    <li>Each packet contains a <b>source IP</b> (Server A) and <b>destination IP</b> (Server B).</li>
+    <li>Routers use the IP addresses to forward packets to the destination.</li>
+    <li>IP is best-effort (unreliable) — reliability is handled by TCP.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>4. Network Access / Link Layer (Ethernet, Wi-Fi)</h2>
+  <ul>
+    <li>IP packets are wrapped in <b>frames</b> (like Ethernet frames).</li>
+    <li>Each frame includes the <b>MAC address</b> of the next hop (switch or router) and a checksum.</li>
+    <li>The frame is transmitted as electrical/optical/radio signals.</li>
+    <li>At each hop, the MAC layer checks and forwards the frame to the next hop.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Where the Connection is Established</h2>
+  <ul>
+    <li>The <b>connection is established at the Transport Layer</b> (TCP), not at the Application or Link Layer.</li>
+    <li>After the 3-way handshake, a logical connection is established between:
+      <ul>
+        <li><b>Client IP + Port ↔ Server IP + Port</b></li>
+      </ul>
+    </li>
+    <li>This connection is virtual — no dedicated physical wire exists between the two systems.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Will the Same Connection Be Used for All Requests?</h2>
+  <h3>HTTP/1.0</h3>
+  <ul><li>Each HTTP request opens a new TCP connection and closes it after the response.</li></ul>
+  <h3>HTTP/1.1</h3>
+  <ul><li>Introduced persistent connections (<code>Connection: keep-alive</code>).</li>
+      <li>Multiple requests can reuse one TCP connection.</li></ul>
+  <h3>HTTP/2</h3>
+  <ul><li>Uses a single TCP connection to send multiple requests concurrently (multiplexing).</li></ul>
+</div>
+
+<div class="section">
+  <h2>Summary of the Flow</h2>
+  <ol>
+    <li>HTTP request is generated by the application.</li>
+    <li>TCP creates a reliable connection via handshake.</li>
+    <li>IP routes the packets through routers to the destination server.</li>
+    <li>Ethernet/Wi-Fi transmits frames physically across the network.</li>
+    <li>The receiving server unwraps the layers and processes the HTTP request.</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h2>Diagram Example</h2>
+  <p>The diagram below illustrates how multiple HTTP requests can either reuse a single TCP connection (HTTP/1.1, HTTP/2) or use multiple separate TCP connections (HTTP/1.0).</p>
+  <img src="A_2D_digital_diagram_illustrates_the_relationship_.png" alt="TCP Connection Diagram" style="max-width:600px;">
+</div>
+
+    </div>
+</body>
+</html>
