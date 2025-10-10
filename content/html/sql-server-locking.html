@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Server Transaction Locking and Row Versioning Guide</title>
+    <title>SQL Server Locking Explained</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +31,7 @@
             opacity: 0.95;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 2rem;
             background-color: white;
@@ -40,66 +40,17 @@
             margin-top: 2rem;
             margin-bottom: 2rem;
         }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 1.5rem;
-            padding: 0.5rem 1.2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
-            transition: background 0.2s, transform 0.2s;
-        }
-        .back-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
         h2 {
             color: #2c3e50;
             border-bottom: 3px solid #667eea;
             padding-bottom: 0.5rem;
-            margin-top: 2.5rem;
+            margin-top: 2rem;
             margin-bottom: 1rem;
-            font-size: 1.8rem;
         }
         h3 {
             color: #34495e;
             margin-top: 1.5rem;
-            margin-bottom: 0.8rem;
-            font-size: 1.4rem;
-        }
-        .overview-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin: 1.5rem 0;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-        .overview-box ul {
-            margin: 0.5rem 0;
-            padding-left: 1.5rem;
-        }
-        .overview-box li {
             margin-bottom: 0.5rem;
-        }
-        .overview-box strong {
-            color: white;
-            font-weight: 600;
-        }
-        .section-card {
-            background-color: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        .section-card h3 {
-            margin-top: 0;
-            color: #667eea;
         }
         table {
             width: 100%;
@@ -118,11 +69,13 @@
             padding: 1rem;
             text-align: left;
             font-weight: 600;
-            font-size: 1rem;
+            border: none;
         }
         td {
             padding: 0.9rem 1rem;
             border-bottom: 1px solid #e9ecef;
+            border-left: none;
+            border-right: none;
         }
         tbody tr:hover {
             background-color: #f8f9fa;
@@ -141,10 +94,6 @@
             color: #2c3e50;
             font-weight: 600;
         }
-        em {
-            font-style: italic;
-            color: #7f8c8d;
-        }
         code {
             background-color: #f1f2f6;
             padding: 0.2rem 0.5rem;
@@ -153,36 +102,22 @@
             font-size: 0.9rem;
             color: #e74c3c;
         }
-        .highlight-box {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 1rem 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 6px 6px 0;
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
         }
-        .info-box {
-            background-color: #d1ecf1;
-            border-left: 4px solid #17a2b8;
-            padding: 1rem 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 6px 6px 0;
-        }
-        .reference {
-            margin-top: 3rem;
-            padding: 1.5rem;
+        .section-card {
             background-color: #f8f9fa;
-            border-radius: 8px;
-            text-align: center;
-            font-style: italic;
-            color: #6c757d;
-        }
-        .reference a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .reference a:hover {
-            text-decoration: underline;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         @media (max-width: 768px) {
             .container {
@@ -212,200 +147,123 @@
 </head>
 <body>
     <header>
-        <h1>🔒 SQL Server Transaction Locking and Row Versioning Guide</h1>
-        <p>Comprehensive summary of transaction integrity, concurrency, and performance optimization</p>
+        <h1>🔒 SQL Server Locking Explained</h1>
+        <p>Understanding transaction locking mechanisms and concurrency control</p>
     </header>
     
     <div class="container">
-        <a href="../../index.html" class="back-link">← Home</a>
-        
-        <div class="overview-box">
-            <h2 style="margin-top: 0; border: none; color: white;">Overview</h2>
-            <ul>
-                <li>SQL Server ensures transaction integrity using <strong>locking</strong> and <strong>row versioning</strong> mechanisms.</li>
-                <li>Applications must balance transaction isolation, concurrency, and performance.</li>
-                <li><strong>Optimized locking</strong> (introduced in 2023) reduces lock overhead by altering lock duration and behavior.</li>
-            </ul>
-        </div>
+        <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+    <h2>1. Why Locking is Needed</h2>
+    <p>SQL Server uses locks to maintain <strong>data consistency</strong> and <strong>isolation</strong> between transactions. Without locks, multiple users could update the same row simultaneously, causing issues like dirty reads, lost updates, or inconsistent data.</p>
 
-        <h2>Transaction Fundamentals</h2>
-        <div class="section-card">
-            <p>A <strong>transaction</strong> is a logical unit of work with ACID properties: <em>Atomicity, Consistency, Isolation, Durability</em>.</p>
-            <ul>
-                <li>Controlled via <code>BEGIN TRANSACTION</code>, <code>COMMIT</code>, <code>ROLLBACK</code>, or implicitly (autocommit mode).</li>
-                <li>Errors during a transaction trigger rollback and resource release.</li>
-                <li>Distributed transactions use <strong>two-phase commit</strong> with Microsoft Distributed Transaction Coordinator (MS DTC).</li>
-            </ul>
-        </div>
+    <h2>2. Types of Locks</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Lock Type</th>
+                <th>Purpose</th>
+                <th>Example</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Shared (S)</strong></td>
+                <td>Read-only access. Multiple transactions can read simultaneously.</td>
+                <td><code>SELECT</code> query</td>
+            </tr>
+            <tr>
+                <td><strong>Exclusive (X)</strong></td>
+                <td>Write access. Only one transaction can modify data at a time.</td>
+                <td><code>UPDATE, DELETE, INSERT</code></td>
+            </tr>
+            <tr>
+                <td><strong>Update (U)</strong></td>
+                <td>Prevents deadlocks when a transaction plans to update a row.</td>
+                <td>Often used with <code>SELECT ... FOR UPDATE</code></td>
+            </tr>
+            <tr>
+                <td><strong>Intent Locks (IS, IX)</strong></td>
+                <td>Show intention to acquire a finer-grained lock (row/page).</td>
+                <td>SQL Server manages hierarchical locks efficiently</td>
+            </tr>
+            <tr>
+                <td><strong>Schema locks</strong></td>
+                <td>Protect schema changes like adding or altering columns.</td>
+                <td><code>ALTER TABLE</code></td>
+            </tr>
+            <tr>
+                <td><strong>Bulk Update (BU)</strong></td>
+                <td>Used during bulk copy operations.</td>
+                <td><code>BULK INSERT</code></td>
+            </tr>
+        </tbody>
+    </table>
 
-        <h2>Locking vs Row Versioning</h2>
-        
-        <h3>Locking</h3>
-        <div class="section-card">
-            <ul>
-                <li>Locks are requested on resources (rows, pages, tables) to prevent conflicts.</li>
-                <li>Lock granularity affects performance: finer granularity = better concurrency but more overhead.</li>
-                <li><strong>Lock compatibility rules</strong> define which locks can coexist.</li>
-                <li><strong>Lock escalation</strong>: SQL Server may upgrade many small locks into a larger one (e.g., table-level).</li>
-                <li><strong>Key-range locks</strong> prevent phantom rows under <code>SERIALIZABLE</code> isolation.</li>
-            </ul>
-        </div>
+    <h2>3. Lock Levels / Granularity</h2>
+    <ul>
+        <li><strong>Row-level:</strong> Locks a single row.</li>
+        <li><strong>Page-level:</strong> Locks an 8 KB page.</li>
+        <li><strong>Table-level:</strong> Locks the entire table.</li>
+        <li><strong>Database-level:</strong> Rare, locks the whole database.</li>
+    </ul>
+    <p>SQL Server tries to use the smallest possible lock, but may escalate to table-level if too many locks are held (lock escalation).</p>
 
-        <h3>Row Versioning</h3>
-        <div class="section-card">
-            <ul>
-                <li>Readers access a <em>snapshot</em> of committed data, avoiding blocking.</li>
-                <li>Two row versioning models:
-                    <ol>
-                        <li><strong>Read Committed Snapshot (RCSI)</strong> — statement-level consistency using version store.</li>
-                        <li><strong>Snapshot Isolation</strong> — transaction-level consistency, requires <code>ALLOW_SNAPSHOT_ISOLATION = ON</code>.</li>
-                    </ol>
-                </li>
-                <li>Reduces blocking but adds <strong>tempdb</strong> overhead for version storage.</li>
-                <li>Schema (DDL) operations are not versioned.</li>
-            </ul>
-        </div>
+    <h2>4. Locks and CRUD Operations</h2>
+    <ul>
+        <li><strong>INSERT:</strong> Exclusive locks on inserted rows.</li>
+        <li><strong>SELECT:</strong> Shared locks unless using <code>WITH (NOLOCK)</code> or snapshot isolation.</li>
+        <li><strong>UPDATE:</strong> Uses update locks, escalates to exclusive on actual update.</li>
+        <li><strong>DELETE:</strong> Exclusive locks on deleted rows.</li>
+    </ul>
 
-        <h2>Isolation Levels</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Isolation Level</th>
-                    <th>Dirty Read</th>
-                    <th>Nonrepeatable Read</th>
-                    <th>Phantom Read</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>READ UNCOMMITTED</strong></td>
-                    <td>Yes</td>
-                    <td>Yes</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td><strong>READ COMMITTED</strong></td>
-                    <td>No</td>
-                    <td>Yes</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td><strong>REPEATABLE READ</strong></td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td><strong>SNAPSHOT</strong></td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td><strong>SERIALIZABLE</strong></td>
-                    <td>No</td>
-                    <td>No</td>
-                    <td>No</td>
-                </tr>
-            </tbody>
-        </table>
+    <h2>5. Deadlocks</h2>
+    <p>A deadlock occurs when two transactions wait on each other’s locks indefinitely:</p>
+    <pre>
+Transaction A: locks Row 1 → wants Row 2
+Transaction B: locks Row 2 → wants Row 1
+    </pre>
+    <p>SQL Server automatically detects this and kills one transaction to resolve the deadlock.</p>
 
-        <div class="info-box">
-            <ul style="margin: 0;">
-                <li>Default isolation is <code>READ COMMITTED</code>.</li>
-                <li>With RCSI enabled, reads use versioning instead of locks.</li>
-                <li><code>SERIALIZABLE</code> prevents phantoms via range locking.</li>
-                <li><code>SNAPSHOT</code> provides consistent reads without blocking.</li>
-            </ul>
-        </div>
+    <h2>6. Lock Hints</h2>
+    <ul>
+        <li><code>WITH (NOLOCK)</code> – read without locking (may read uncommitted data)</li>
+        <li><code>WITH (UPDLOCK)</code> – acquire update lock</li>
+        <li><code>WITH (XLOCK)</code> – force exclusive lock</li>
+    </ul>
 
-        <h2>Locking Details and Modes</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Lock Mode</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Shared (S)</strong></td>
-                    <td>Read operations</td>
-                </tr>
-                <tr>
-                    <td><strong>Exclusive (X)</strong></td>
-                    <td>Insert/Update/Delete</td>
-                </tr>
-                <tr>
-                    <td><strong>Update (U)</strong></td>
-                    <td>Pre-upgrade to exclusive, reduces deadlocks</td>
-                </tr>
-                <tr>
-                    <td><strong>Intent (IS, IX, SIX)</strong></td>
-                    <td>Signals lower-level locks</td>
-                </tr>
-                <tr>
-                    <td><strong>Schema (Sch-S, Sch-M)</strong></td>
-                    <td>DDL operations</td>
-                </tr>
-                <tr>
-                    <td><strong>Bulk Update (BU)</strong></td>
-                    <td>Bulk inserts with TABLOCK</td>
-                </tr>
-                <tr>
-                    <td><strong>Key-Range</strong></td>
-                    <td>Protects ranges in SERIALIZABLE isolation</td>
-                </tr>
-            </tbody>
-        </table>
+    <h2>7. Visualizing Locks</h2>
+    <h3>Shared Locks (S) – Multiple Reads</h3>
+    <pre>
+Row A
+---------
+| Data  |
+---------
+[Transaction 1: S]  Row A  [Transaction 2: S]
+    </pre>
+    <p>Both can read simultaneously; no writes allowed.</p>
 
-        <div class="highlight-box">
-            <p style="margin: 0;"><strong>Note:</strong> Locks may <strong>convert</strong> (e.g., <code>U</code> → <code>X</code>) dynamically. Conversion conflicts can lead to waits or <strong>deadlocks</strong>.</p>
-        </div>
+    <h3>Exclusive Locks (X) – Writing</h3>
+    <pre>
+[Transaction 1: S]  Row A  [Transaction 2: S]  --> Transaction 3 waits
+[Transaction 3: X]  Row A
+    </pre>
+    <p>Exclusive lock prevents other reads or writes until the transaction completes.</p>
 
-        <h2>DML Operations Behavior</h2>
-        
-        <h3>Without Optimized Locking</h3>
-        <div class="section-card">
-            <p>Row/page locks held until transaction end.</p>
-        </div>
+    <h3>Update Locks (U) – Prevent Deadlocks</h3>
+    <pre>
+Transaction 4: SELECT * FROM Table WHERE ID=1 WITH (UPDLOCK)
+[U] Row is locked to prevent exclusive writes by others.
+Converts to exclusive lock when UPDATE happens.
+    </pre>
 
-        <h3>With Optimized Locking</h3>
-        <div class="section-card">
-            <ul>
-                <li>Uses <strong>TID (Transaction ID) locks</strong> held until transaction end.</li>
-                <li>Row/page locks are acquired and released incrementally.</li>
-                <li>Reduces overall lock memory footprint.</li>
-            </ul>
-        </div>
-
-        <h3>Operation Examples</h3>
-        <ul>
-            <li><strong>Insert:</strong> Range and exclusive locks on new row.</li>
-            <li><strong>Delete:</strong> Exclusive lock on deleted row + TID locks.</li>
-        </ul>
-
-        <h2>Lock Escalation</h2>
-        <div class="section-card">
-            <p>Converts many fine-grained locks into coarse (table-level) locks to reduce overhead.</p>
-            <p>With optimized locking, fewer locks are used — escalation is less frequent.</p>
-        </div>
-
-        <h2>Application Design Guidance</h2>
-        <div class="info-box">
-            <ul style="margin: 0;">
-                <li>Match isolation level to business requirements.</li>
-                <li>Use <strong>RCSI</strong> or <strong>Snapshot Isolation</strong> for high read concurrency workloads.</li>
-                <li>Use lock hints (e.g., <code>UPDLOCK</code>, <code>HOLDLOCK</code>) carefully.</li>
-                <li>Monitor <strong>tempdb</strong> for version store growth under versioning.</li>
-                <li>Track deadlocks and escalation patterns using DMVs and Extended Events.</li>
-                <li>Test and tune <strong>Optimized Locking</strong> in newer SQL Server versions.</li>
-            </ul>
-        </div>
-
-        <div class="reference">
-            <p><em>Reference: <a href="https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-ver17" target="_blank">Microsoft Docs - Transaction Locking and Row Versioning Guide</a></em></p>
-        </div>
+    <h3>Deadlock Scenario</h3>
+    <pre>
+Row A        Row B
+------       ------
+Transaction 5: X --> Row A, wants Row B
+Transaction 6: X --> Row B, wants Row A
+</pre>
+    <p>Both wait indefinitely. SQL Server resolves by killing one transaction.</p>
     </div>
 </body>
 </html>
