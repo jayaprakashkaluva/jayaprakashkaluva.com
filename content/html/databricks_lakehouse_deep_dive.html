@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Databricks & Delta Lake — Deep Dive</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      line-height: 1.6;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+    header p {
+      margin: 0.5rem 0 0 0;
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+      background-color: white;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      color: #2c3e50;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 0.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      color: #34495e;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    section {
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .kbd {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background-color: #f1f2f6;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #e74c3c;
+    }
+    code, pre {
+      font-family: 'Courier New', monospace;
+    }
+    code {
+      background-color: #f1f2f6;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: #e74c3c;
+    }
+    pre {
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      padding: 1rem;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+    .img-card {
+      background-color: #f8f9fa;
+      border: 1px solid #e1e4e8;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .img-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .caption {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .list-2col {
+      columns: 2;
+      column-gap: 24px;
+    }
+    ul {
+      margin: 1rem 0;
+      padding-left: 2rem;
+    }
+    ol {
+      margin: 1rem 0;
+      padding-left: 2rem;
+    }
+    li {
+      margin-bottom: 0.6rem;
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+        margin: 1rem;
+      }
+      header h1 {
+        font-size: 1.8rem;
+      }
+      header p {
+        font-size: 1rem;
+      }
+      .list-2col {
+        columns: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Databricks &amp; Delta Lake — Deep Dive</h1>
+    <p>A concise, engineer-friendly walkthrough of Databricks Lakehouse, Delta Tables, commits, reads, temporary storage, and DBFS.</p>
+  </header>
+
+  <div class="container">
+    <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+
+    <section id="what-is-databricks">
+      <h2>What is Databricks?</h2>
+      <p>Databricks is a <strong>unified data &amp; AI platform</strong> built on Apache Spark that merges the best of data lakes and data warehouses into a <strong>Lakehouse</strong>. You store data once in low-cost cloud object storage and query it like a warehouse, run pipelines, stream processing, and build ML models on the same platform.</p>
+      <div class="grid">
+        <div>
+          <h3>Why teams use it</h3>
+          <ul class="list-2col">
+            <li>Scalable Spark compute</li>
+            <li>ACID Delta Tables</li>
+            <li>Streaming + batch</li>
+            <li>SQL analytics</li>
+            <li>MLflow &amp; AI</li>
+            <li>Unity Catalog governance</li>
+            <li>Open formats (Parquet/Delta)</li>
+            <li>Runs on AWS/Azure/GCP</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Lakehouse in one line</h3>
+          <p class="kbd">Object Storage + Delta (transactions) + Spark (compute) + Governance</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="delta-table-basics">
+      <h2>Delta Tables: What &amp; Where</h2>
+      <p>A <strong>Delta Table</strong> is a set of Parquet files plus a <span class="kbd">_delta_log/</span> transaction log stored in your cloud object storage:</p>
+<pre><code>/path/to/table/
+ ├─ part-0000.snappy.parquet
+ ├─ part-0001.snappy.parquet
+ └─ _delta_log/
+     ├─ 00000000000000000000.json
+     ├─ 00000000000000000001.json
+     └─ ...
+</code></pre>
+      <div class="grid">
+        <div>
+          <h3>Managed table</h3>
+<pre><code>CREATE TABLE sales (region STRING, amount DOUBLE);</code></pre>
+<p>Stored under the workspace-managed path (e.g., <span class="kbd">dbfs:/user/hive/warehouse/</span>).</p>
+        </div>
+        <div>
+          <h3>External table</h3>
+<pre><code>CREATE TABLE sales
+USING DELTA
+LOCATION 'abfss://datalake@account.dfs.core.windows.net/bronze/sales';</code></pre>
+<p>Physically stored in your ADLS/S3/GCS path; catalog just points to it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="write-commit">
+      <h2>How a Delta Write &amp; Commit Works</h2>
+      <ol>
+        <li>Executors write new Parquet data to temporary locations.</li>
+        <li>Driver prepares a JSON action file under <span class="kbd">_delta_log/</span>.</li>
+        <li>Atomic commit: the new log version (e.g., <span class="kbd">0002.json</span>) becomes visible.</li>
+        <li>Readers see a consistent snapshot; older readers continue on old versions (snapshot isolation).</li>
+      </ol>
+      <div class="img-card">
+        <img src="A_diagram_illustrates_Delta_Lake's_write_and_commi.png" alt="Delta Lake write and commit process diagram" />
+        <div class="caption">Delta Lake write path: from temporary files to atomic commit in <span class="kbd">_delta_log/</span>.</div>
+      </div>
+    </section>
+
+    <section id="read-snapshot">
+      <h2>How a Delta Read Builds a Snapshot</h2>
+      <p>Readers list <span class="kbd">_delta_log/</span>, apply actions from JSON (and checkpoints) to determine the active data files for the requested version, then read only those Parquet files.</p>
+      <div class="img-card">
+        <img src="A_flowchart_diagram_visually_illustrates_how_Delta.png" alt="Delta Lake read process using _delta_log and checkpoints" />
+        <div class="caption">Read path: _delta_log + checkpoints → snapshot → filtered file reads.</div>
+      </div>
+    </section>
+
+    <section id="temporary-storage">
+      <h2>Where Temporary Storage Lives</h2>
+      <ul>
+        <li><strong>Executor local disk</strong> <span class="kbd">/local_disk0/tmp</span> for shuffles &amp; spills (ephemeral).</li>
+        <li><strong>Cloud staging path</strong> under the table location (e.g., <span class="kbd">_temporary/</span>) before the commit.</li>
+      </ul>
+      <div class="img-card">
+        <img src="A_diagram_illustrates_temporary_storage_and_Delta_.png" alt="Temporary storage layers before Delta commit" />
+        <div class="caption">Two-stage temp storage: executor local disk → cloud temporary path.</div>
+      </div>
+    </section>
+
+    <section id="dbfs">
+      <h2>What is DBFS?</h2>
+      <p><strong>DBFS</strong> is a Databricks filesystem abstraction that lets you access cloud object storage with simple paths like <span class="kbd">/dbfs/mnt/datalake/</span> or <span class="kbd">dbfs:/mnt/datalake/</span>. Mounts map to S3/ADLS/GCS; managed tables live under <span class="kbd">dbfs:/user/hive/warehouse/</span>.</p>
+      <div class="img-card">
+        <img src="A_diagram_visually_represents_the_Databricks_Files.png" alt="DBFS architecture between cluster and cloud storage" />
+        <div class="caption">DBFS connects your cluster to cloud object storage via mounts; <span class="kbd">/local_disk0</span> is ephemeral.</div>
+      </div>
+    </section>
+
+    <section id="object-storage-flat">
+      <h2>How &ldquo;Folders&rdquo; Work on Object Storage</h2>
+      <p>Object stores are flat key–value systems. Delta uses naming conventions and prefix listings to simulate directories. Example keys:</p>
+<pre><code>s3://bucket/sales/_delta_log/00000000000000000000.json
+s3://bucket/sales/part-0001.snappy.parquet</code></pre>
+      <p>The slashes in keys are just delimiters used for grouping in listings and UIs.</p>
+    </section>
+  </div>
+</body>
+</html>
