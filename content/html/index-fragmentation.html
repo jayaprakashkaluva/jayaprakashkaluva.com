@@ -122,10 +122,6 @@
       margin: 1rem 0;
     }
     .small { font-size: 0.92rem; color: #7f8c8d; }
-    .speaker {
-      font-weight: 700;
-      color: #667eea;
-    }
     ul {
       margin: 1rem 0;
       padding-left: 2rem;
@@ -155,38 +151,6 @@
 
   <div class="container">
     <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
-
-    <section>
-      <h2>Conversation Transcript</h2>
-
-      <div class="panel">
-        <p><span class="speaker">User:</span> You are a senior database administrator. Explain me what is index fragmentation. Explain with diagrams</p>
-      </div>
-
-      <div class="panel">
-        <p><span class="speaker">Assistant:</span> Intro to index fragmentation, why it matters, and quick check about SQL Server vs general engines. Defined internal and external fragmentation, gave conceptual phonebook/B-tree analogy, and showed initial diagrams and a quick fix table (Reorganize vs Rebuild).</p>
-      </div>
-
-      <div class="panel">
-        <p><span class="speaker">User:</span> Yes</p>
-      </div>
-
-      <div class="panel">
-        <p><span class="speaker">Assistant:</span> Step-by-step page split visualization with ASCII diagrams: initial healthy state, an insert into a full page, allocation of a new page, update of parent pointers, and the resulting logical vs physical order mismatch → external fragmentation.</p>
-      </div>
-
-      <div class="panel">
-        <p><span class="speaker">User:</span> yes</p>
-      </div>
-
-      <div class="panel">
-        <p><span class="speaker">Assistant:</span> Deep dive into B-Tree internals: root/intermediate/leaf layout, leaf-level split, split propagation to parent/root, and why rebuild restores physical contiguity. Included multiple ASCII diagrams and an analogy table.</p>
-      </div>
-
-      <div class="callout small">
-        Note: Minor user typos retained in spirit. The technical content below consolidates and expands everything discussed in the chat into a clean reference.
-      </div>
-    </section>
 
     <section>
       <h2>What is Index Fragmentation?</h2>
@@ -241,7 +205,7 @@ Physical order: #1 → #2 → #3 → … → #7   (≠ logical) → External fra
 </code></pre>
 
       <div class="callout">
-        <strong>Why it hurts:</strong> range scans that could be sequential devolve into random I/O and cache churn. On SSDs the penalty is smaller than HDDs, but buffer/cache efficiency still drops.
+        <strong>Performance Impact:</strong> Range scans that could be sequential devolve into random I/O and cache churn. On SSDs the penalty is smaller than HDDs, but buffer/cache efficiency still drops.
       </div>
     </section>
 

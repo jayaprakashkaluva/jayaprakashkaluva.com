@@ -70,20 +70,12 @@
     padding: 1.5rem;
     margin: 1.5rem 0;
   }
-  .msg {
-    border-left: 4px solid #667eea;
-    padding: 1rem;
-    border-radius: 0 5px 5px 0;
+  p {
     margin: 1rem 0;
-    background-color: #f8f9fa;
+    line-height: 1.8;
   }
-  .role {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #667eea;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
+  strong {
+    color: #2c3e50;
   }
   code, pre {
     font-family: 'Courier New', monospace;
@@ -161,99 +153,69 @@
     </section>
 
     <section id="part1" class="panel">
-      <div class="msg user">
-        <div class="role">User</div>
-        <div>How is index stored in a database</div>
-      </div>
-      <div class="msg assistant">
-        <div class="role">Assistant</div>
-        <div>
-          In a <strong>relational database</strong>, an index is a specialized data structure that maps
-          <code>KEY → ROW&nbsp;LOCATION</code> to speed up reads. Most engines store indexes as
-          <strong>B/B+‑Trees</strong> made of pages (root, branch, leaf). Clustered indexes keep the
-          data rows in the leaf pages; non‑clustered indexes keep the key plus a row locator.
-        </div>
-        <div>
-          Pages (e.g., 8&nbsp;KB in SQL Server, 16&nbsp;KB in InnoDB) live in their own index
-          allocation, are cached in the buffer pool, and leaf pages are doubly-linked to support
-          efficient range scans. Maintenance operations (rebuild/reorganize), statistics, and page
-          splits keep the tree balanced.
-        </div>
-        <pre>Root → Branch → Leaf (sorted keys)
+      <h2>How Indexes Are Stored in a Database</h2>
+      <p>
+        In a <strong>relational database</strong>, an index is a specialized data structure that maps
+        <code>KEY → ROW&nbsp;LOCATION</code> to speed up reads. Most engines store indexes as
+        <strong>B/B+‑Trees</strong> made of pages (root, branch, leaf). Clustered indexes keep the
+        data rows in the leaf pages; non‑clustered indexes keep the key plus a row locator.
+      </p>
+      <p>
+        Pages (e.g., 8&nbsp;KB in SQL Server, 16&nbsp;KB in InnoDB) live in their own index
+        allocation, are cached in the buffer pool, and leaf pages are doubly-linked to support
+        efficient range scans. Maintenance operations (rebuild/reorganize), statistics, and page
+        splits keep the tree balanced.
+      </p>
+      <pre>Root → Branch → Leaf (sorted keys)
 Leaf (clustered): [key | full row]
 Leaf (non-clustered): [key | row locator]</pre>
-      </div>
     </section>
 
     <section id="part2" class="panel">
-      <div class="msg user">
-        <div class="role">User</div>
-        <div>Yes</div>
-      </div>
-      <div class="msg assistant">
-        <div class="role">Assistant</div>
-        <div>Diagram: B+Tree storage with clustered and non‑clustered leafs.</div>
-        <div class="figure">
-          <img alt="B+Tree index storage: root/branch/leaf, clustered vs non-clustered leaf pages." src="sandbox:/mnt/data/A_diagram_in_this_digital_illustration_depicts_how.png" />
-          <div class="caption">Figure 1 — B+Tree structure. Clustered leaf pages store full rows; non‑clustered store row locators.</div>
-        </div>
+      <h2>Visual Representation: B+Tree Structure</h2>
+      <p>The following diagram illustrates B+Tree storage with both clustered and non‑clustered leaf pages.</p>
+      <div class="figure">
+        <img alt="B+Tree index storage: root/branch/leaf, clustered vs non-clustered leaf pages." src="sandbox:/mnt/data/A_diagram_in_this_digital_illustration_depicts_how.png" />
+        <div class="caption">Figure 1 — B+Tree structure. Clustered leaf pages store full rows; non‑clustered store row locators.</div>
       </div>
     </section>
 
     <section id="part3" class="panel">
-      <div class="msg user">
-        <div class="role">User</div>
-        <div>Can you explain me page splits</div>
-      </div>
-      <div class="msg assistant">
-        <div class="role">Assistant</div>
-        <div>
-          A <strong>page split</strong> occurs when inserting into a full leaf page. The engine
-          allocates a new page, moves about half the rows, inserts the new key, and updates parent
-          pointers so the B‑Tree remains balanced.
-        </div>
-        <pre>Before: [10, 20, 30]  (insert 25 → no space)
+      <h2>Understanding Page Splits</h2>
+      <p>
+        A <strong>page split</strong> occurs when inserting into a full leaf page. The engine
+        allocates a new page, moves about half the rows, inserts the new key, and updates parent
+        pointers so the B‑Tree remains balanced.
+      </p>
+      <pre>Before: [10, 20, 30]  (insert 25 → no space)
 Split  : allocate new page
 After : [10, 20]  |  [25, 30]
 Parent updated with new child pointer</pre>
-        <div>
-          Splits cause extra I/O and can lead to <em>logical fragmentation</em> if the new page
-          isn’t allocated near the original. Use sequential keys, appropriate <code>FILLFACTOR</code>,
-          and periodic maintenance to reduce impact.
-        </div>
-      </div>
+      <p>
+        Splits cause extra I/O and can lead to <em>logical fragmentation</em> if the new page
+        isn't allocated near the original. Use sequential keys, appropriate <code>FILLFACTOR</code>,
+        and periodic maintenance to reduce impact.
+      </p>
     </section>
 
     <section id="part4" class="panel">
-      <div class="msg user">
-        <div class="role">User</div>
-        <div>During page split, what happens if nearby disk locations are all full</div>
-      </div>
-      <div class="msg assistant">
-        <div class="role">Assistant</div>
-        <div>
-          If the extent containing the original page has no free space, the engine allocates the
-          new page from another extent (possibly far away). Logical adjacency is preserved via
-          B‑Tree links, but <strong>physical locality is lost</strong>, increasing fragmentation
-          and hurting range‑scan performance. Rebuild/reorganize and lower fill factor can help.
-        </div>
-        <pre>Old extent (full) → allocate new page in another extent
+      <h2>Page Splits When Nearby Disk Locations Are Full</h2>
+      <p>
+        If the extent containing the original page has no free space, the engine allocates the
+        new page from another extent (possibly far away). Logical adjacency is preserved via
+        B‑Tree links, but <strong>physical locality is lost</strong>, increasing fragmentation
+        and hurting range‑scan performance. Rebuild/reorganize and lower fill factor can help.
+      </p>
+      <pre>Old extent (full) → allocate new page in another extent
 Logical leaf order remains; physical order diverges (fragmentation)</pre>
-      </div>
     </section>
 
     <section id="part5" class="panel">
-      <div class="msg user">
-        <div class="role">User</div>
-        <div>yes please</div>
-      </div>
-      <div class="msg assistant">
-        <div class="role">Assistant</div>
-        <div>Diagram: page split with remote allocation; logical link vs physical separation.</div>
-        <div class="figure">
-          <img alt="Page split when nearby extent is full: logical link across physically distant extents." src="sandbox:/mnt/data/A_diagram_illustrates_page_split_handling_in_a_B-t.png" />
-          <div class="caption">Figure 2 — After split, new leaf page is allocated in a distant extent; the leaf chain remains logically adjacent.</div>
-        </div>
+      <h2>Visual Representation: Remote Page Allocation</h2>
+      <p>The following diagram shows page split with remote allocation, illustrating the contrast between logical links and physical separation.</p>
+      <div class="figure">
+        <img alt="Page split when nearby extent is full: logical link across physically distant extents." src="sandbox:/mnt/data/A_diagram_illustrates_page_split_handling_in_a_B-t.png" />
+        <div class="caption">Figure 2 — After split, new leaf page is allocated in a distant extent; the leaf chain remains logically adjacent.</div>
       </div>
     </section>
 
