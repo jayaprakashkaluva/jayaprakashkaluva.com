@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Database Index Storage & Page Splits</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    line-height: 1.6;
+    color: #333;
+  }
+  header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 300;
+  }
+  header .meta {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.95;
+  }
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    color: #2c3e50;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  .toc {
+    margin: 1.5rem 0;
+    padding: 0;
+    list-style: none;
+  }
+  .toc li {
+    margin-bottom: 0.5rem;
+  }
+  .toc a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+  }
+  .panel {
+    background-color: #f8f9fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .msg {
+    border-left: 4px solid #667eea;
+    padding: 1rem;
+    border-radius: 0 5px 5px 0;
+    margin: 1rem 0;
+    background-color: #f8f9fa;
+  }
+  .role {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  code, pre {
+    font-family: 'Courier New', monospace;
+  }
+  code {
+    background-color: #f1f2f6;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #e74c3c;
+  }
+  pre {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 1rem;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-size: 0.9rem;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+  .figure {
+    background-color: #f8f9fa;
+    border: 1px solid #e1e4e8;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+  }
+  .figure img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  .caption {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  @media (max-width: 768px) {
+    .wrap {
+      padding: 1rem;
+      margin: 1rem;
+    }
+    header h1 {
+      font-size: 1.8rem;
+    }
+    header .meta {
+      font-size: 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Database Index Storage & Page Splits</h1>
+    <div class="meta">Complete guide to index storage, B+Trees, and page split mechanics</div>
+  </header>
+
+  <div class="wrap">
+    <a href="../../index.html" style="display:inline-block;margin-bottom:1.5rem;padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:6px;text-decoration:none;font-weight:bold;box-shadow:0 2px 8px rgba(102,126,234,0.12);transition:background 0.2s;">← Home</a>
+
+    <section>
+      <h2>Table of Contents</h2>
+      <ul class="toc">
+        <li><a href="#part1">1) How is an index stored in a database?</a></li>
+        <li><a href="#part2">2) Visual diagram of B+Tree, clustered vs non-clustered</a></li>
+        <li><a href="#part3">3) Page splits – explanation</a></li>
+        <li><a href="#part4">4) When nearby disk locations are full – fragmentation</a></li>
+        <li><a href="#part5">5) Visual diagram of remote allocation after split</a></li>
+      </ul>
+    </section>
+
+    <section id="part1" class="panel">
+      <div class="msg user">
+        <div class="role">User</div>
+        <div>How is index stored in a database</div>
+      </div>
+      <div class="msg assistant">
+        <div class="role">Assistant</div>
+        <div>
+          In a <strong>relational database</strong>, an index is a specialized data structure that maps
+          <code>KEY → ROW&nbsp;LOCATION</code> to speed up reads. Most engines store indexes as
+          <strong>B/B+‑Trees</strong> made of pages (root, branch, leaf). Clustered indexes keep the
+          data rows in the leaf pages; non‑clustered indexes keep the key plus a row locator.
+        </div>
+        <div>
+          Pages (e.g., 8&nbsp;KB in SQL Server, 16&nbsp;KB in InnoDB) live in their own index
+          allocation, are cached in the buffer pool, and leaf pages are doubly-linked to support
+          efficient range scans. Maintenance operations (rebuild/reorganize), statistics, and page
+          splits keep the tree balanced.
+        </div>
+        <pre>Root → Branch → Leaf (sorted keys)
+Leaf (clustered): [key | full row]
+Leaf (non-clustered): [key | row locator]</pre>
+      </div>
+    </section>
+
+    <section id="part2" class="panel">
+      <div class="msg user">
+        <div class="role">User</div>
+        <div>Yes</div>
+      </div>
+      <div class="msg assistant">
+        <div class="role">Assistant</div>
+        <div>Diagram: B+Tree storage with clustered and non‑clustered leafs.</div>
+        <div class="figure">
+          <img alt="B+Tree index storage: root/branch/leaf, clustered vs non-clustered leaf pages." src="sandbox:/mnt/data/A_diagram_in_this_digital_illustration_depicts_how.png" />
+          <div class="caption">Figure 1 — B+Tree structure. Clustered leaf pages store full rows; non‑clustered store row locators.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="part3" class="panel">
+      <div class="msg user">
+        <div class="role">User</div>
+        <div>Can you explain me page splits</div>
+      </div>
+      <div class="msg assistant">
+        <div class="role">Assistant</div>
+        <div>
+          A <strong>page split</strong> occurs when inserting into a full leaf page. The engine
+          allocates a new page, moves about half the rows, inserts the new key, and updates parent
+          pointers so the B‑Tree remains balanced.
+        </div>
+        <pre>Before: [10, 20, 30]  (insert 25 → no space)
+Split  : allocate new page
+After : [10, 20]  |  [25, 30]
+Parent updated with new child pointer</pre>
+        <div>
+          Splits cause extra I/O and can lead to <em>logical fragmentation</em> if the new page
+          isn’t allocated near the original. Use sequential keys, appropriate <code>FILLFACTOR</code>,
+          and periodic maintenance to reduce impact.
+        </div>
+      </div>
+    </section>
+
+    <section id="part4" class="panel">
+      <div class="msg user">
+        <div class="role">User</div>
+        <div>During page split, what happens if nearby disk locations are all full</div>
+      </div>
+      <div class="msg assistant">
+        <div class="role">Assistant</div>
+        <div>
+          If the extent containing the original page has no free space, the engine allocates the
+          new page from another extent (possibly far away). Logical adjacency is preserved via
+          B‑Tree links, but <strong>physical locality is lost</strong>, increasing fragmentation
+          and hurting range‑scan performance. Rebuild/reorganize and lower fill factor can help.
+        </div>
+        <pre>Old extent (full) → allocate new page in another extent
+Logical leaf order remains; physical order diverges (fragmentation)</pre>
+      </div>
+    </section>
+
+    <section id="part5" class="panel">
+      <div class="msg user">
+        <div class="role">User</div>
+        <div>yes please</div>
+      </div>
+      <div class="msg assistant">
+        <div class="role">Assistant</div>
+        <div>Diagram: page split with remote allocation; logical link vs physical separation.</div>
+        <div class="figure">
+          <img alt="Page split when nearby extent is full: logical link across physically distant extents." src="sandbox:/mnt/data/A_diagram_illustrates_page_split_handling_in_a_B-t.png" />
+          <div class="caption">Figure 2 — After split, new leaf page is allocated in a distant extent; the leaf chain remains logically adjacent.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
